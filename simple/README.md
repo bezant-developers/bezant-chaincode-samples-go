@@ -116,3 +116,8 @@ func (t *SimpleChaincode) get(stub shim.ChaincodeStubInterface, args []string) p
 	return shim.Success(resultValueBytes)
 }
 ```
+
+## Compress go files cli
+``` console
+zip -r chaincode.zip simpleChaincode.go
+```
