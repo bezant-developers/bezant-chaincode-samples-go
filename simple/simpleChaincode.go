@@ -19,10 +19,15 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	fmt.Println("========= Invoke =========")
 	function, args := stub.GetFunctionAndParameters()
 
-	if function == "put" {
+	switch function {
+	case "put":
 		return t.put(stub, args)
-	} else if function == "get" {
+	case "get":
 		return t.get(stub, args)
+	case "getEnrollmentId":
+		return t.getEnrollmentId(stub, args)
+	default:
+		return shim.Error("No function name : " + function + " found")
 	}
 
 	return shim.Error("No function name : " + function + " found")
@@ -68,6 +73,20 @@ func (t *SimpleChaincode) get(stub shim.ChaincodeStubInterface, args []string) p
 	}
 
 	return shim.Success(resultValueBytes)
+}
+
+func (t *SimpleChaincode) getEnrollmentId(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 0 {
+		return shim.Error("Incorrect number of arguments. Expecting 0")
+	}
+
+	enrollmentId, err := getEnrollmentId(stub)
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	return shim.Success([]byte(enrollmentId))
 }
 
 func main() {

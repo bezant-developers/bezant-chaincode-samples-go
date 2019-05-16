@@ -92,7 +92,7 @@ func (t *SimpleChaincode) put(stub shim.ChaincodeStubInterface, args []string) p
 ```
 
 Get returns the value of the specified asset key
-``` go
+```go
 func (t *SimpleChaincode) get(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var keyString string
 	var err error
@@ -117,7 +117,61 @@ func (t *SimpleChaincode) get(stub shim.ChaincodeStubInterface, args []string) p
 }
 ```
 
+Start the chaincode process and listen for incoming endorsement requests
+```go
+func main() {
+	err := shim.Start(new(SimpleChaincode))
+	if err != nil {
+		fmt.Printf("Error starting Simple chaincode: %s", err)
+	}
+}
+```
+
+## Managing external dependencies for chaincode written in Go
+If your chaincode requires packages not provided by the Go standard library, you will need to include those packages with your chaincode. It is also a good practice to add the shim and any extension libraries to your chaincode as a dependency.
+
+There are [many tools available](https://github.com/golang/go/wiki/PackageManagementTools) for managing (or “vendoring”) these dependencies. The following demonstrates how to use govendor:
+
+``` 
+govendor init
+govendor add +external  // Add all external package, or
+govendor add github.com/external/pkg // Add specific external package
+```
+This imports the external dependencies into a local vendor directory. If you are vendoring the Fabric shim or shim extensions, clone the Fabric repository to your $GOPATH/src/github.com/hyperledger directory, before executing the govendor commands.
+
 ## Compress go files cli
 ``` console
-zip -r chaincode.zip simpleChaincode.go
+zip -r chaincode.zip vendor simpleChaincode.go chaincodeUtil.go 
+```
+
+## Local environment test
+[bezant-chaincode-test-network link](https://github.com/bezant-developers/bezant-chaincode-test-network)
+
+``Put``
+```bash
+docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C bezant-channel -n simple-go --peerAddresses peer0.bezant.example.com:7051 -c '{"Args":["put", "a", "10"]}'
+```
+
+``Get``
+```bash
+docker exec cli peer chaincode query -C bezant-channel -n simple-go --peerAddresses peer0.bezant.example.com:7051 -c '{"Args":["get", "a"]}'
+```
+
+``Get enrollmentId``
+```bash
+docker exec cli peer chaincode query -C bezant-channel -n simple-go --peerAddresses peer0.bezant.example.com:7051 -c '{"Args":["getEnrollmentId"]}'
+```
+
+``Instantiate``
+```bash
+docker exec cli peer chaincode install -n simple-go -v 1.0 -p simple-go
+docker exec cli2 peer chaincode install -n simple-go -v 1.0 -p simple-go                                                                                            
+docker exec cli peer chaincode instantiate -o orderer.example.com:7050 -C bezant-channel -n simple-go -v 1.0 -c '{"Args":["init"]}'               
+```
+
+``Upgrade``
+```bash
+docker exec cli peer chaincode install -n simple-go -v 1.1 -p simple-go
+docker exec cli2 peer chaincode install -n simple-go -v 1.1 -p simple-go                                                                                            
+docker exec cli peer chaincode upgrade -o orderer.example.com:7050 -C bezant-channel -n simple-go -v 1.1 -c '{"Args":["init"]}'               
 ```
