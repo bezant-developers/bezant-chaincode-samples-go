@@ -24,8 +24,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.put(stub, args)
 	case "get":
 		return t.get(stub, args)
-	case "putAndGetEnrollmentId":
-		return t.putAndGetEnrollmentId(stub, args)
+	case "putByWalletAddress":
+		return t.putByWalletAddress(stub, args)
 	default:
 		return shim.Error("No function name : " + function + " found")
 	}
@@ -75,29 +75,29 @@ func (t *SimpleChaincode) get(stub shim.ChaincodeStubInterface, args []string) p
 	return shim.Success(resultValueBytes)
 }
 
-func (t *SimpleChaincode) putAndGetEnrollmentId(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) putByWalletAddress(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var err error
-	var keyString, valString, enrollmentId string
+	var valString, walletAddress string
 
-	if len(args) != 2 {
+	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting 2")
 	}
 
-	keyString = args[0]
-	valString = args[1]
-
-	err = stub.PutState(keyString, []byte(valString))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	enrollmentId, err = getEnrollmentId(stub)
+	walletAddress, err = getWalletAddress(stub)
 
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	return shim.Success([]byte(enrollmentId))
+	valString = args[0]
+
+	err = stub.PutState(walletAddress, []byte(valString))
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	return shim.Success(nil)
 }
 
 func main() {
